@@ -15,3 +15,4 @@ MonoBehaviour:
   Corner: {fileID: 5526759327457095622, guid: 263adf65b7113c541ba8c0f1f2ba59f6, type: 3}
   Base: {fileID: 6949018359773464368, guid: 5540460b6ad2776499412a4ca071b103, type: 3}
   LineEnd: {fileID: 8652731687523705837, guid: a75932d954647b04ba98d9d5ba675462, type: 3}
+  material: {fileID: 2100000, guid: 166e51628570e1945a85e6ec64cac61e, type: 2}

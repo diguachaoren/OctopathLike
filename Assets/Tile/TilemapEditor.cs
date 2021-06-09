@@ -63,6 +63,7 @@ public class TilemapEditor : MonoBehaviour
     private void Awake(){
         foreach(Transform cur in layerContainers.Values){
             CombineMesh(cur.gameObject);
+            cur.GetComponent<MeshRenderer>().material = preset.material;
         }
     }
     private void CombineMesh(GameObject obj){
