@@ -2,25 +2,34 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+public enum Tools{
+    Add,
+    Delete
+}
 [System.Serializable]
 public class TilemapLayer{
     [SerializeField, HideInInspector]
     public SerializableDictionary<Vector3Int, GameObject> tiles = new SerializableDictionary<Vector3Int, GameObject> ();
     [SerializeField, HideInInspector]
-    private Vector3Int immediateOffsets;
+    public List<Vector3Int> immediateOffsets;
+    [SerializeField, HideInInspector]
+    public Quaternion quaternionOffset;
+    public TilemapLayer(){
+        immediateOffsets =  new List<Vector3Int>{new Vector3Int(-1,0,0), new Vector3Int(1,0,0), new Vector3Int(0,0,1), new Vector3Int(0,0,-1)};
+        quaternionOffset = Quaternion.Euler(0,-45,0);
+    }
     public void UpdateObject(TilePreset presets){
         foreach(GameObject go in tiles.Values){
             int neightbours = 0;
+            bool isCorner = false;
             var Direction = Vector3Int.zero;
             Vector3Int tilePos = new Vector3Int((int)go.transform.position.x, (int)go.transform.position.y, (int)go.transform.position.z);
-            if(tiles.ContainsKey(new Vector3Int(tilePos.x + 1,tilePos.y, tilePos.z-1))){ neightbours++;}
-            if(tiles.ContainsKey(new Vector3Int(tilePos.x + 1,tilePos.y, tilePos.z))){ neightbours++;}
-            if(tiles.ContainsKey(new Vector3Int(tilePos.x + 1,tilePos.y, tilePos.z+1))){ neightbours++;}
-            if(tiles.ContainsKey(new Vector3Int(tilePos.x,tilePos.y, tilePos.z - 1))){ neightbours++;}
-            if(tiles.ContainsKey(new Vector3Int(tilePos.x,tilePos.y, tilePos.z + 1))){ neightbours++;}
-            if(tiles.ContainsKey(new Vector3Int(tilePos.x - 1,tilePos.y, tilePos.z-1))){ neightbours++;}
-            if(tiles.ContainsKey(new Vector3Int(tilePos.x - 1,tilePos.y, tilePos.z))){ neightbours++;}
-            if(tiles.ContainsKey(new Vector3Int(tilePos.x - 1,tilePos.y, tilePos.z+1))){ neightbours++;}
+            foreach(Vector3Int offset in immediateOffsets){
+                if(tiles.ContainsKey(tilePos + offset)){ 
+                    neightbours++;
+                    Direction -= offset;
+                }
+            }
             switch(neightbours){
                 case 0:
                     go.GetComponent<MeshFilter>().mesh = presets.Base.GetComponent<MeshFilter>().sharedMesh;
@@ -31,35 +40,43 @@ public class TilemapLayer{
                     go.GetComponent<MeshCollider>().sharedMesh  = presets.LineEnd.GetComponent<MeshFilter>().sharedMesh;
                     break;
                 case 2:
-                    go.GetComponent<MeshFilter>().mesh = presets.Base.GetComponent<MeshFilter>().sharedMesh;
-                    go.GetComponent<MeshCollider>().sharedMesh  = presets.Base.GetComponent<MeshFilter>().sharedMesh;
-                    break;
-                case 3:
-                    go.GetComponent<MeshFilter>().mesh = presets.Corner.GetComponent<MeshFilter>().sharedMesh;
-                    go.GetComponent<MeshCollider>().sharedMesh  = presets.Corner.GetComponent<MeshFilter>().sharedMesh;
+                    if(Direction == Vector3Int.zero){
+                        go.GetComponent<MeshFilter>().mesh = presets.Base.GetComponent<MeshFilter>().sharedMesh;
+                        go.GetComponent<MeshCollider>().sharedMesh  = presets.Base.GetComponent<MeshFilter>().sharedMesh;
+                    }else{
+                        go.GetComponent<MeshFilter>().mesh = presets.Corner.GetComponent<MeshFilter>().sharedMesh;
+                        go.GetComponent<MeshCollider>().sharedMesh  = presets.Corner.GetComponent<MeshFilter>().sharedMesh;
+                        isCorner = true;
+                    }
                     break;
                 default:
                     go.GetComponent<MeshFilter>().mesh = presets.Base.GetComponent<MeshFilter>().sharedMesh;
                     go.GetComponent<MeshCollider>().sharedMesh  = presets.Base.GetComponent<MeshFilter>().sharedMesh;
                     break;
             }
+            go.transform.rotation = Quaternion.LookRotation(-Direction);
+            if(isCorner){
+                go.transform.rotation *= quaternionOffset;
+            }
+            Debug.Log(neightbours);
         }
     }
 }
 [System.Serializable]
 public class TilemapEditor : MonoBehaviour 
 {
+    [SerializeField]
     public GameObject tile;
     public GameObject layerGO;
     public TilePreset preset;
     public Vector3 spawnPoint;
     public int currentLayer;
-    public Quaternion rota;
+    [HideInInspector]
+    public Tools currentTool = Tools.Add;
     [SerializeField, HideInInspector]
     public SerializableDictionary<int, TilemapLayer> layers = new SerializableDictionary<int, TilemapLayer> ();
     [SerializeField, HideInInspector]
     public SerializableDictionary<int, Transform> layerContainers = new SerializableDictionary<int, Transform> ();
-
     private void Awake(){
         foreach(Transform cur in layerContainers.Values){
             CombineMesh(cur.gameObject);
@@ -102,7 +119,7 @@ public class TilemapEditor : MonoBehaviour
             layerContainers.Add(currentLayer,newLayer.transform);
             layers.Add(currentLayer,new TilemapLayer());
         }
-        GameObject newTile = Instantiate(tile,new Vector3(pos.x,currentLayer,pos.z), rota, layerContainers[currentLayer]);
+        GameObject newTile = Instantiate(tile,new Vector3(pos.x,currentLayer,pos.z), Quaternion.identity, layerContainers[currentLayer]);
         if(layers[currentLayer].tiles.ContainsKey(new Vector3Int((int)pos.x,currentLayer,(int)pos.z))){
             DeleteObject(new Vector3Int((int)pos.x,currentLayer,(int)pos.z));
             layers[currentLayer].tiles[new Vector3Int((int)pos.x,currentLayer,(int)pos.z)] = newTile;
@@ -124,18 +141,14 @@ public class TilemapEditor : MonoBehaviour
         }
 
     }
-
-    public void ChangeObject(int index){
-        switch(index){
-            case 0:
-                tile = preset.Base;
+    public void ClickEditor(Vector3 pos){
+        switch(currentTool){
+            case Tools.Add:
+                BuildObject(pos);
                 break;
-            case 1:
-                tile = preset.Corner;
-                break;
-            case 2:
-                tile = preset.LineEnd;
-                break;
+            case Tools.Delete:
+                DeleteObject(pos);
+                break; 
         }
     }
     public void Reset(){

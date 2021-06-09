@@ -7,25 +7,33 @@ public class TilemapEditorGUI : Editor
 {
     private Vector3 center;
     private GameObject objectUnder;
+    private bool isDragging;
+    private Vector3 lastPosition;
     TilemapEditor myScript;
+    int toolbarInt = 0;
+    string[] toolbarStrings = {"Add tile", "Delete"};
     private void OnEnable() {
 
         myScript = (TilemapEditor)target;
+        isDragging = false;
+
     }
 
     public override void OnInspectorGUI()
     {
         DrawDefaultInspector();
 
-        TilemapEditor myScript = (TilemapEditor)target;
-        if(GUILayout.Button("Base")){
-            myScript.ChangeObject(0);
-        }
-        if(GUILayout.Button("Corner")){
-            myScript.ChangeObject(1);
-        }
-        if(GUILayout.Button("LineEnd")){
-            myScript.ChangeObject(2);
+        toolbarInt = GUILayout.Toolbar(toolbarInt, toolbarStrings);
+
+        switch (toolbarInt)
+        {
+            case 0:
+            myScript.currentTool = Tools.Add;
+            break;
+
+            case 1:
+            myScript.currentTool = Tools.Delete;
+            break;
         }
         if(GUILayout.Button("Clear")){
             myScript.Reset();
@@ -39,8 +47,6 @@ public class TilemapEditorGUI : Editor
                 myScript.currentLayer+=1;
             }else if (Event.current.keyCode == KeyCode.E){
                 myScript.currentLayer-=1;
-            }else if (Event.current.keyCode == KeyCode.R){
-                myScript.rota.eulerAngles += new Vector3(0,90,0);
             }
         }
         Plane plane = new Plane(Vector3.up, Vector3.up * myScript.currentLayer);
@@ -56,12 +62,21 @@ public class TilemapEditorGUI : Editor
         Handles.DrawWireCube(center,new Vector3(1f,1f,1f));
         if(Event.current.type == EventType.MouseDown){
             if(Event.current.button == 0){
-                myScript.BuildObject(posGrid);
+                myScript.ClickEditor(posGrid);
                 EditorUtility.SetDirty( target );
+                isDragging = true;
+                center = lastPosition;
             }
-            else if(Event.current.button == 1){
-                myScript.DeleteObject(posGrid);
-                EditorUtility.SetDirty( target );
+        }else if(Event.current.type == EventType.MouseUp){
+            if(Event.current.button == 0){
+                isDragging = false;
+            }
+        }else if(Event.current.type == EventType.MouseDrag){
+            if(Event.current.button == 0){
+                if(center!= lastPosition){
+                    myScript.ClickEditor(posGrid);
+                    EditorUtility.SetDirty( target );
+                }
             }
         }
     }

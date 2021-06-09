@@ -5,10 +5,13 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     private Animator _animator;
+    private Rigidbody rigidbody;
+
     bool up;
     bool down;
     bool left;
     bool right;
+    bool jump;
     [SerializeField]
     private float playerSpeed;
 
@@ -17,6 +20,7 @@ public class PlayerMovement : MonoBehaviour
     void Awake()
     {
         _animator = GetComponent<Animator>();
+        rigidbody = GetComponent<Rigidbody>();
     }
 
     // Update is called once per frame
@@ -34,8 +38,13 @@ public class PlayerMovement : MonoBehaviour
         else if(Input.GetKey(KeyCode.Q)){
             left = true;
         }
+        if(Input.GetKey(KeyCode.Space) && isGrounded()){
+            jump = true;
+        }
     }
-
+    private bool isGrounded(){
+        return Physics.Raycast(transform.position, -Vector3.up, 1f);
+    }
     private void FixedUpdate() {
 
         if(up){
@@ -60,6 +69,10 @@ public class PlayerMovement : MonoBehaviour
         }
         else {
             ChangeAnimState("Idle");
+        }
+        if(jump){
+            rigidbody.AddForce(new Vector3(0,10000,0));
+            jump = false;
         }
 
     }
