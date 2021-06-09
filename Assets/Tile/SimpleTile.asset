@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c93e2e1619760b74498543f31ef65c6a, type: 3}
+  m_Name: SimpleTile
+  m_EditorClassIdentifier: 
+  Corner: {fileID: 5526759327457095622, guid: 263adf65b7113c541ba8c0f1f2ba59f6, type: 3}
+  Base: {fileID: 6949018359773464368, guid: 5540460b6ad2776499412a4ca071b103, type: 3}
+  LineEnd: {fileID: 8652731687523705837, guid: a75932d954647b04ba98d9d5ba675462, type: 3}
